@@ -1,0 +1,37 @@
+import React, { useState, useCallback } from 'react';
+
+function MyComponent() {
+  // Removed experimental_useObject import
+
+  // Instead of:
+  // const obj = experimental_useObject({ initialName: 'John Doe', initialAge: 30 });
+  const [obj, setObj] = useState({ initialName: 'John Doe', initialAge: 30 });
+
+  const updateObj = useCallback((updates) => {
+    setObj(prevObj => ({ ...prevObj, ...updates }));
+  }, []);
+
+  const changeName = () => {
+    // Instead of:
+    // obj.initialName = 'Jane Doe';
+    updateObj({ initialName: 'Jane Doe' });
+  };
+
+  const changeAge = () => {
+    // Instead of:
+    // obj.initialAge = 35;
+    updateObj({ initialAge: 35 });
+  };
+
+  return (
+    <div>
+      <p>Name: {obj.initialName}</p>
+      <p>Age: {obj.initialAge}</p>
+      <button onClick={changeName}>Change Name</button>
+      <button onClick={changeAge}>Change Age</button>
+    </div>
+  );
+}
+
+export default MyComponent;
+
