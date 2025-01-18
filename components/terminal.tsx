@@ -390,4 +390,3 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
     </div>
   )
 }
-
