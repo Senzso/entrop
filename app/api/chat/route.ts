@@ -14,6 +14,11 @@ export async function POST(req: Request) {
     // Extract the `messages` from the body of the request
     const { messages } = await req.json()
 
+    // Validate the OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not set')
+    }
+
     // Ask OpenAI for a streaming chat completion given the prompt
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -34,10 +39,19 @@ export async function POST(req: Request) {
     return new StreamingTextResponse(stream)
   } catch (error) {
     console.error('Error in API route:', error)
-    return new Response(JSON.stringify({ error: 'An error occurred during your request.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    
+    // Check if the error is an instance of Error
+    if (error instanceof Error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    } else {
+      return new Response(JSON.stringify({ error: 'An unknown error occurred' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
   }
 }
 

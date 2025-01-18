@@ -53,9 +53,15 @@ export default function Terminal({ onClose }: TerminalProps) {
     api: '/api/chat',
     onError: (err) => {
       console.error('Chat error:', err)
+      let errorMessage = 'An error occurred while processing your request.'
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (typeof err === 'object' && err !== null && 'error' in err) {
+        errorMessage = String(err.error)
+      }
       toast({
         title: 'Error',
-        description: err.message || 'An error occurred while processing your request.',
+        description: errorMessage,
         variant: 'destructive',
       })
     },
@@ -318,7 +324,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           )}
           {error && (
             <div className="mb-4 font-mono text-sm text-red-500">
-              <span className="opacity-50">#</span> Error: {error.message}
+              <span className="opacity-50">#</span> Error: {error.message || 'An unknown error occurred'}
             </div>
           )}
           {messages.map((message, i) => (
