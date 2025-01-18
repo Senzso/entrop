@@ -166,16 +166,25 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           { role: 'assistant', content: commandResponse }
         ])
       } else {
-        handleSubmit(undefined as any, {
-          options: {
-            body: {
-              messages: [
-                ...messages,
-                { role: 'user', content: text }
-              ]
+        try {
+          await handleSubmit(undefined as any, {
+            options: {
+              body: {
+                messages: [
+                  ...messages,
+                  { role: 'user', content: text }
+                ]
+              }
             }
-          }
-        })
+          })
+        } catch (error) {
+          console.error('Error in handleSubmit:', error)
+          setMessages(prevMessages => [
+            ...prevMessages,
+            { role: 'user', content: text },
+            { role: 'assistant', content: 'An error occurred while processing your request. Please try again.' }
+          ])
+        }
       }
       setInput('') // Reset the input field after sending
     }
