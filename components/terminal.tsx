@@ -166,6 +166,8 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           { role: 'assistant', content: commandResponse }
         ])
       } else {
+        console.log('Sending request to OpenAI...');
+        console.log('Messages:', messages);
         try {
           await handleSubmit(undefined as any, {
             options: {
@@ -177,6 +179,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
               }
             }
           })
+          console.log('Response received from OpenAI');
         } catch (error) {
           console.error('Error in handleSubmit:', error)
           setMessages(prevMessages => [
