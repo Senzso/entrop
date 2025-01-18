@@ -49,9 +49,9 @@ export default function Terminal({ onClose }: TerminalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
-  const { messages, input, handleInputChange, handleSubmit, setMessages, setInput } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setMessages, setInput, isLoading } = useChat({
     api: '/api/chat',
-    initialMessages: [{ role: 'assistant', content: WELCOME_MESSAGE }]
+    initialMessages: [{ id: 'welcome', role: 'assistant', content: WELCOME_MESSAGE }]
   })
 
   const connectPhantomWallet = useCallback(async () => {
@@ -156,48 +156,22 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
     }
   }, [isWalletConnected, connectPhantomWallet, setShowBundler, setShowOnChain, setShowVolumeBot])
 
-  const handleSend = useCallback(async (text: string) => {
-    if (text.trim()) {
-      const commandResponse = await handleCommand(text)
+  const handleSend = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (input.trim()) {
+      const commandResponse = await handleCommand(input)
       if (commandResponse) {
         setMessages(prevMessages => [
           ...prevMessages,
-          { role: 'user', content: text },
-          { role: 'assistant', content: commandResponse }
+          { id: Date.now().toString(), role: 'user', content: input },
+          { id: (Date.now() + 1).toString(), role: 'assistant', content: commandResponse }
         ])
+        setInput('')
       } else {
-        try {
-          console.log('Sending request to OpenAI...');
-          console.log('Messages:', messages);
-          await handleSubmit(undefined as any, {
-            options: {
-              body: {
-                messages: [
-                  ...messages,
-                  { role: 'user', content: text }
-                ]
-              }
-            }
-          })
-          console.log('Response received from OpenAI');
-        } catch (error: any) {
-          console.error('Error in handleSubmit:', error);
-          let errorMessage = 'An unknown error occurred';
-          if (error instanceof Error) {
-            errorMessage = error.message;
-          } else if (typeof error === 'object' && error !== null) {
-            errorMessage = JSON.stringify(error);
-          }
-          setMessages(prevMessages => [
-            ...prevMessages,
-            { role: 'user', content: text },
-            { role: 'assistant', content: `An error occurred: ${errorMessage}. Please try again or contact support if the issue persists.` }
-          ])
-        }
+        handleSubmit(e)
       }
-      setInput('') // Reset the input field after sending
     }
-  }, [handleCommand, setMessages, handleSubmit, messages, setInput])
+  }, [input, handleCommand, setMessages, setInput, handleSubmit])
 
   const startRecording = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
@@ -220,7 +194,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
 
     recognitionRef.current.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
-      handleSend(transcript)
+      handleSend(event)
     }
 
     recognitionRef.current.onerror = (event: any) => {
@@ -329,6 +303,11 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           transition-all duration-500
           ${isMinimized ? 'opacity-0' : 'opacity-100'}
         `}>
+          {isLoading && (
+            <div className="mb-4 font-mono text-sm text-white/90">
+              <span className="opacity-50">#</span> Thinking...
+            </div>
+          )}
           {messages.map((message, i) => (
             <div
               key={i}
@@ -343,7 +322,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
         </div>
 
         {/* Input Form */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className={`
+        <form onSubmit={handleSend} className={`
           p-6 border-t border-white/10 bg-black/50
           transition-all duration-500
           ${isMinimized ? 'opacity-0 pointer-events-none' : 'opacity-100'}
