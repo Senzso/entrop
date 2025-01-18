@@ -211,7 +211,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
 
     recognitionRef.current.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
-      handleSend(event)
+      setInput(transcript)
     }
 
     recognitionRef.current.onerror = (event: any) => {
@@ -229,7 +229,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
     }
 
     recognitionRef.current.start()
-  }, [toast, handleSend])
+  }, [toast, setInput])
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
