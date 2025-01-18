@@ -166,9 +166,9 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           { role: 'assistant', content: commandResponse }
         ])
       } else {
-        console.log('Sending request to OpenAI...');
-        console.log('Messages:', messages);
         try {
+          console.log('Sending request to OpenAI...');
+          console.log('Messages:', messages);
           await handleSubmit(undefined as any, {
             options: {
               body: {
@@ -180,12 +180,18 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
             }
           })
           console.log('Response received from OpenAI');
-        } catch (error) {
-          console.error('Error in handleSubmit:', error)
+        } catch (error: any) {
+          console.error('Error in handleSubmit:', error);
+          let errorMessage = 'An unknown error occurred';
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === 'object' && error !== null) {
+            errorMessage = JSON.stringify(error);
+          }
           setMessages(prevMessages => [
             ...prevMessages,
             { role: 'user', content: text },
-            { role: 'assistant', content: 'An error occurred while processing your request. Please try again.' }
+            { role: 'assistant', content: `An error occurred: ${errorMessage}. Please try again or contact support if the issue persists.` }
           ])
         }
       }
