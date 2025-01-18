@@ -49,8 +49,16 @@ export default function Terminal({ onClose }: TerminalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
-  const { messages, input, handleInputChange, handleSubmit, setMessages, setInput } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setMessages, setInput, isLoading, error } = useChat({
     api: '/api/chat',
+    onError: (err) => {
+      console.error('Chat error:', err)
+      toast({
+        title: 'Error',
+        description: err.message || 'An error occurred while processing your request.',
+        variant: 'destructive',
+      })
+    },
     initialMessages: [{ role: 'assistant', content: WELCOME_MESSAGE }]
   })
 
@@ -156,30 +164,22 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
     }
   }, [isWalletConnected, connectPhantomWallet, setShowBundler, setShowOnChain, setShowVolumeBot])
 
-  const handleSend = useCallback(async (text: string) => {
-    if (text.trim()) {
-      const commandResponse = await handleCommand(text)
+  const handleSend = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (input.trim()) {
+      const commandResponse = await handleCommand(input)
       if (commandResponse) {
         setMessages(prevMessages => [
           ...prevMessages,
-          { role: 'user', content: text },
+          { role: 'user', content: input },
           { role: 'assistant', content: commandResponse }
         ])
+        setInput('')
       } else {
-        handleSubmit(undefined as any, {
-          options: {
-            body: {
-              messages: [
-                ...messages,
-                { role: 'user', content: text }
-              ]
-            }
-          }
-        })
+        handleSubmit(e)
       }
-      setInput('') // Reset the input field after sending
     }
-  }, [handleCommand, setMessages, handleSubmit, messages, setInput])
+  }, [input, handleCommand, setMessages, setInput, handleSubmit])
 
   const startRecording = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
@@ -202,7 +202,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
 
     recognitionRef.current.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
-      handleSend(transcript)
+      setInput(transcript)
     }
 
     recognitionRef.current.onerror = (event: any) => {
@@ -220,7 +220,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
     }
 
     recognitionRef.current.start()
-  }, [toast, handleSend])
+  }, [toast, setInput])
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
@@ -311,6 +311,16 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           transition-all duration-500
           ${isMinimized ? 'opacity-0' : 'opacity-100'}
         `}>
+          {isLoading && (
+            <div className="mb-4 font-mono text-sm text-white/90">
+              <span className="opacity-50">#</span> Thinking...
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 font-mono text-sm text-red-500">
+              <span className="opacity-50">#</span> Error: {error.message}
+            </div>
+          )}
           {messages.map((message, i) => (
             <div
               key={i}
@@ -325,7 +335,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
         </div>
 
         {/* Input Form */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className={`
+        <form onSubmit={handleSend} className={`
           p-6 border-t border-white/10 bg-black/50
           transition-all duration-500
           ${isMinimized ? 'opacity-0 pointer-events-none' : 'opacity-100'}
