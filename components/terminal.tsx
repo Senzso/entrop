@@ -51,6 +51,7 @@ export default function Terminal({ onClose }: TerminalProps) {
   const recognitionRef = useRef<any>(null)
   const { messages, input, handleInputChange, handleSubmit, setMessages, setInput, isLoading } = useChat({
     api: '/api/chat',
+    method: 'POST',
     initialMessages: [{ id: 'welcome', role: 'assistant', content: WELCOME_MESSAGE }]
   })
 
@@ -168,7 +169,7 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
         ])
         setInput('')
       } else {
-        handleSubmit(e)
+        await handleSubmit(e)
       }
     }
   }, [input, handleCommand, setMessages, setInput, handleSubmit])
