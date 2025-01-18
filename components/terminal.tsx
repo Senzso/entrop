@@ -49,9 +49,16 @@ export default function Terminal({ onClose }: TerminalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
-  const { messages, input, handleInputChange, handleSubmit, setMessages, setInput, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setMessages, setInput, isLoading, error } = useChat({
     api: '/api/chat',
-    method: 'POST',
+    onError: (err) => {
+      console.error('Chat error:', err)
+      toast({
+        title: 'Error',
+        description: err.message || 'An error occurred while processing your request.',
+        variant: 'destructive',
+      })
+    },
     initialMessages: [{ id: 'welcome', role: 'assistant', content: WELCOME_MESSAGE }]
   })
 
@@ -169,10 +176,19 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
         ])
         setInput('')
       } else {
-        await handleSubmit(e)
+        try {
+          await handleSubmit(e)
+        } catch (error) {
+          console.error('Error in handleSubmit:', error)
+          toast({
+            title: 'Error',
+            description: 'An error occurred while processing your request. Please try again.',
+            variant: 'destructive',
+          })
+        }
       }
     }
-  }, [input, handleCommand, setMessages, setInput, handleSubmit])
+  }, [input, handleCommand, setMessages, setInput, handleSubmit, toast])
 
   const startRecording = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
@@ -307,6 +323,11 @@ IMPORTANT: Save your private key securely. It will not be shown again.`
           {isLoading && (
             <div className="mb-4 font-mono text-sm text-white/90">
               <span className="opacity-50">#</span> Thinking...
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 font-mono text-sm text-red-500">
+              <span className="opacity-50">#</span> Error: {error.message}
             </div>
           )}
           {messages.map((message, i) => (
